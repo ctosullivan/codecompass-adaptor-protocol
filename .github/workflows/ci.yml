@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install jsonschema
+      - name: Validate schemas are well-formed JSON Schema
+        run: |
+          python - <<'EOF'
+          import json
+          from pathlib import Path
+          from jsonschema.validators import validator_for
+
+          for path in sorted(Path("schemas").glob("*.json")):
+              schema = json.loads(path.read_text())
+              validator_for(schema)(schema).check_schema(schema)
+              print(f"OK  {path}")
+          EOF
+      - name: Validate examples against schemas
+        run: |
+          python - <<'EOF'
+          import json
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+
+          pairs = {
+              "initialize-request.json": "schemas/initialize-request.json",
+              "initialize-response.json": "schemas/initialize-response.json",
+              "analyze_project-request.json": "schemas/analyze_project-request.json",
+              "analyze_project-response.json": "schemas/analyze_project-response.json",
+              "shutdown-request.json": "schemas/shutdown-request.json",
+              "shutdown-response.json": "schemas/shutdown-response.json",
+              "error.json": "schemas/error.json",
+          }
+          for example, schema_path in pairs.items():
+              schema = json.loads(Path(schema_path).read_text())
+              instance = json.loads((Path("examples") / example).read_text())
+              Draft202012Validator(schema).validate(instance)
+              print(f"OK  examples/{example}")
+          EOF
+      - name: Run conformance manifest (valid + invalid vectors)
+        run: |
+          python - <<'EOF'
+          import json
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+
+          manifest = json.loads(Path("conformance/manifest.json").read_text())
+          failures = []
+          for entry in manifest["vectors"]:
+              schema = json.loads(Path(entry["schema"]).read_text())
+              instance = json.loads(Path(entry["vector"]).read_text())
+              errors = list(Draft202012Validator(schema).iter_errors(instance))
+              is_valid = not errors
+              expected_valid = entry["expect"] == "valid"
+              status = "OK" if is_valid == expected_valid else "FAIL"
+              print(f"{status}  {entry['vector']} against {entry['schema']} (expected {entry['expect']})")
+              if is_valid != expected_valid:
+                  failures.append(entry)
+          if failures:
+              raise SystemExit(f"{len(failures)} conformance vector(s) failed")
+          EOF
