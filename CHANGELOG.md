@@ -6,7 +6,7 @@ follows [SemVer](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.1.0] - TBD
+## [0.1.0] - 2026-09-19
 
 Initial protocol version, built as CodeCompass's Phase 60 (minimal
 external Haskell adapter).
