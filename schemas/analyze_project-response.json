@@ -16,7 +16,13 @@
             "properties": {
               "name": { "type": "string", "minLength": 1 },
               "purpose": { "type": ["string", "null"] },
-              "module": { "type": "string", "minLength": 1 }
+              "module": { "type": "string", "minLength": 1 },
+              "kind": {
+                "type": "string",
+                "enum": ["export", "reexport", "undetermined"],
+                "default": "export"
+              },
+              "note": { "type": ["string", "null"] }
             },
             "required": ["name", "purpose", "module"],
             "additionalProperties": false

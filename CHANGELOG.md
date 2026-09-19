@@ -21,3 +21,10 @@ external Haskell adapter).
 - `examples/` — worked example messages for every schema.
 - `conformance/` — valid/invalid test vectors for schema validation by
   any implementation, in any language.
+- `analyze_project-response.json`'s `symbols` items gained two optional
+  fields, `kind` (`"export"` | `"reexport"` | `"undetermined"`, default
+  `"export"`) and `note` (nullable free text) — needed by the reference
+  Haskell adapter to represent a module re-export entry or a
+  build-conditional-gated name it cannot confidently resolve, without
+  overstating confidence as a plain `"export"` entry would. Additive and
+  backward compatible — no `protocol_version` change.

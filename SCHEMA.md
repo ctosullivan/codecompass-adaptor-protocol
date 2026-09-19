@@ -81,6 +81,25 @@ adapter declared the matching capability** in `initialize`:
 - **`symbols`** — a flat array of `{"name", "purpose", "module"}`
   objects — the adapter's own best mechanical (non-AI) extraction of
   the analyzed package's public API surface. `purpose` is nullable.
+  Two further fields are **optional**, for languages whose visibility
+  model can't always mechanically resolve to a plain, confident "this
+  name is exported" — added for the reference Haskell adapter, where
+  some real export-list entries name what they cover only ambiguously
+  without deeper (out of scope for a no-full-parser scanner) analysis:
+  - `kind` — one of `"export"` (the default when omitted — an ordinary,
+    confidently-resolved exported name), `"reexport"` (this entry names
+    a re-export of another module's own surface rather than a single
+    symbol defined here — `name` in this case is the re-export's own
+    alias/target, not a definition), or `"undetermined"` (the adapter
+    detected this entry but could not confidently resolve whether it is
+    actually exported — e.g. a name gated by a build-time conditional
+    the adapter can't evaluate). A host should not treat `"reexport"`
+    or `"undetermined"` entries as equivalent in confidence to
+    `"export"` ones.
+  - `note` — nullable free-text elaboration (e.g. which real modules a
+    `"reexport"` entry's alias covers, or why an entry is
+    `"undetermined"`). Never machine-parsed by a host; for a human or an
+    agent reading the result.
 - **`observations`** — an array of neutral, provenance-preserving
   findings: `{"method", "what_was_done", "location", "raw_result",
   "tool", "tool_version"}`. This mirrors the field vocabulary
